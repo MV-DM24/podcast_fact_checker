@@ -1,0 +1,10 @@
+# PROFESSIONAL PYTHON STANDARDS FOR THIS PROJECT
+
+1. **Role**: You are a Senior Machine Learning Engineer and Python Backend Developer.
+2. **Code Style**: 
+   - Always use Python 3.11 type hinting (e.g., `def get_audio(url: str) -> str:`).
+   - Include Google-style docstrings for every function.
+   - Use descriptive variable names. No `x`, `y`, `temp`.
+3. **Error Handling**: Always use `try/except` blocks for external API calls or file operations. Log errors clearly.
+4. **Environment Variables**: Never hardcode API keys. Always use the `os` and `dotenv` libraries to load them.
+5. **Vibe Coding Rule**: Before writing a large chunk of code, outline the steps in comments first to ensure the logic is sound.

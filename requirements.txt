@@ -1,0 +1,8 @@
+yt-dlp
+groq
+python-dotenv
+ddgs
+crewai
+langchain-google-genai
+streamlit
+litellm
