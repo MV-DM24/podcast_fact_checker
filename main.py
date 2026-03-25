@@ -3,11 +3,13 @@ from __future__ import annotations
 import logging
 import sys
 import time
+from pathlib import Path
 from dotenv import load_dotenv
 
 from src.audio_utils import download_youtube_audio
 from src.crew_utils import verify_claim_with_crew
 from src.llm_utils import extract_claims_from_transcript, transcribe_audio_with_groq
+from src.db_utils import check_if_video_processed, save_results_to_db, upload_audio_to_storage
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,10 +44,13 @@ def process_video(youtube_url: str, max_claims: int = 3) -> list[dict]:
         `verdict`, `explanation`, and `source`.
     """
     # Steps (high-level):
+    # - Check DB cache; return immediately if available
     # - Load environment variables (API keys)
     # - Download audio and transcribe it
+    # - Upload audio to cloud storage (best-effort backup)
     # - Extract claims and slice to `max_claims`
     # - Verify each claim (sleep between calls to avoid rate limits)
+    # - Save results to DB cache
     if not isinstance(youtube_url, str) or not youtube_url.strip():
         raise ValueError("youtube_url must be a non-empty string.")
     if not isinstance(max_claims, int) or max_claims < 1:
@@ -57,10 +62,28 @@ def process_video(youtube_url: str, max_claims: int = 3) -> list[dict]:
         LOGGER.exception("Failed to load .env; continuing with environment variables.")
 
     try:
+        cached_results = check_if_video_processed(youtube_url=youtube_url.strip())
+    except Exception as exc:
+        LOGGER.exception("Failed to query Supabase cache for URL: %s", youtube_url)
+        raise RuntimeError("Failed to check cache in the database.") from exc
+
+    if cached_results is not None:
+        if isinstance(cached_results, list):
+            return cached_results
+        # Be resilient to unexpected DB shapes, but don't silently return junk.
+        LOGGER.warning("Cached results for URL=%s were not a list; ignoring cache.", youtube_url)
+
+    try:
         audio_path = download_youtube_audio(youtube_url=youtube_url)
     except Exception as exc:
         LOGGER.exception("Audio download failed for URL: %s", youtube_url)
         raise RuntimeError("Audio download failed.") from exc
+
+    try:
+        youtube_video_id = Path(audio_path).stem
+        upload_audio_to_storage(local_file_path=audio_path, youtube_video_id=youtube_video_id)
+    except Exception:
+        LOGGER.exception("Audio cloud backup failed; continuing without storage backup.")
 
     try:
         transcript = transcribe_audio_with_groq(audio_file_path=audio_path)
@@ -97,5 +120,10 @@ def process_video(youtube_url: str, max_claims: int = 3) -> list[dict]:
 
         # Rate limit protection for repeated LLM calls.
         time.sleep(20)
+
+    try:
+        save_results_to_db(youtube_url=youtube_url.strip(), final_fact_checked_claims=fact_checked_claims)
+    except Exception:
+        LOGGER.exception("Failed to save results to Supabase cache; continuing without caching.")
 
     return fact_checked_claims

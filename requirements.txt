@@ -6,3 +6,4 @@ crewai
 langchain-google-genai
 streamlit
 litellm
+supabase
