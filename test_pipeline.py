@@ -16,7 +16,7 @@ if __name__ == "__main__":
     load_dotenv()
 
     # Hardcoded short YouTube URL for Milestone 1 smoke test.
-    test_youtube_url = "https://youtu.be/6VDQHi04IX0?si=-VxxeYX2tFwRSzbe"
+    test_youtube_url = "https://youtu.be/6VDQHi04IX0?si=VqFdux-PeP-ir7mg"
 
     print("Downloading audio...")
     audio_path = download_youtube_audio(youtube_url=test_youtube_url)
