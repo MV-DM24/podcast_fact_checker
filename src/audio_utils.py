@@ -63,6 +63,9 @@ def download_youtube_audio(youtube_url: str) -> str:
         "no_warnings": True,
         "noprogress": True,
         "progress_hooks": [_progress_hook],
+        "extractor_args": {
+            "youtube":["player_client=android", "player_skip=web"]
+        }
     }
 
     try:
