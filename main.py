@@ -26,7 +26,7 @@ def _configure_logging() -> None:
         pass
 
 
-def process_video(youtube_url: str, max_claims: int = 3) -> list[dict]:
+def process_video(youtube_url: str, max_claims: int = 5) -> list[dict]:
     """Download, transcribe, extract claims, and fact-check them with AI.
 
     This runs the full Milestone 3 pipeline:
